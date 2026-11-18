@@ -9,7 +9,6 @@ import es.upm.grise.subscriptionService.exceptions.UserDoesNotHaveEmailException
 public class SubscriptionService {
 
 	private Collection <User> subscribers;
-	@SuppressWarnings("unused")
 	private EmailService emailService;
 	
 	/* 
@@ -28,26 +27,17 @@ public class SubscriptionService {
 	 */
 	
 	public void addSubscriber(User user) throws NullUserException, ExistingUserException, UserDoesNotHaveEmailException {
-
-		try {
-			if (user == null) {
-				throw new NullUserException();
-			}
-			if (subscribers.contains(user)) {
-				throw new ExistingUserException();
-			}
-			if (user.getEmail() == null) {
-				throw new UserDoesNotHaveEmailException();
-			}
-
-			subscribers.add(user);
-		} catch (NullUserException e) {
-			throw e;
-		} catch (ExistingUserException e) {
-			throw e;
-		} catch (UserDoesNotHaveEmailException e) {
-			throw e;
+		
+		if (user == null) {
+			throw new NullUserException();
 		}
+		if (subscribers.contains(user)) {
+			throw new ExistingUserException();
+		}
+		if (user.getDelivery() != Delivery.LOCAL && user.getEmail() == null) {
+			throw new UserDoesNotHaveEmailException();
+		}
+		subscribers.add(user);
 	}
 	
 	/* 
@@ -56,21 +46,13 @@ public class SubscriptionService {
 	
 	public void removeSubscriber(User user) throws NullUserException, NonExistingUserException {
 		
-		try {
-			if (user == null) {
-				throw new NullUserException();
-			}
-			if (!subscribers.contains(user)) {
-				throw new NonExistingUserException();
-			}
-
-			subscribers.remove(user);
-		} catch (NullUserException e) {
-			throw e;
-		} catch (NonExistingUserException e) {
-			throw e;
+		if (user == null) {
+			throw new NullUserException();
 		}
-
+		if (!subscribers.contains(user)) {
+			throw new NonExistingUserException();
+		}
+		subscribers.remove(user);
 	}
 	
 	/* 
@@ -78,21 +60,26 @@ public class SubscriptionService {
 	 */
 	
 	public int sendMessage(Message message) {
-		int sentMessages = 0;
+
+		int discardedMessages = 0;
+
+		// En la especificacion pone que se envia a todos usuarios, por eso no diferencio entre delivery distintos para mandar
 
 		for (User user : subscribers) {
-			Delivery delivery = user.getDelivery();
-
-			if (delivery == Delivery.LOCAL) {
-				user.saveMessage(message);
-				sentMessages++;
-			} else if (delivery == Delivery.DO_NOT_DELIVER) {
-				user.saveMessage(new Message(message.getId(), "Ha perdido ud. un mensaje"));
-				sentMessages++;
+			emailService.sendMessage(user, message);
+			switch (user.getDelivery()) {
+				case LOCAL:
+					user.saveMessage(message);
+					break;
+				case DO_NOT_DELIVER:
+					user.saveMessage(new Message(message.getId(), "Ha perdido ud. un mensaje"));
+					discardedMessages++;
+					break;
+				default:
+					break;
 			}
 		}
-
-		return sentMessages;
+		return discardedMessages;
 	}
 	
 	/* 
