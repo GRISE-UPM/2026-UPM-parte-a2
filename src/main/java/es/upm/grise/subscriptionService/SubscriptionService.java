@@ -1,45 +1,86 @@
 package es.upm.grise.subscriptionService;
 
+import java.util.ArrayList;
 import java.util.Collection;
+
+import es.upm.grise.subscriptionService.exceptions.ExistingUserException;
+import es.upm.grise.subscriptionService.exceptions.NonExistingUserException;
+import es.upm.grise.subscriptionService.exceptions.NullUserException;
+import es.upm.grise.subscriptionService.exceptions.UserDoesNotHaveEmailException;
 
 public class SubscriptionService {
 
-	private Collection <User> subscribers;
-	@SuppressWarnings("unused")
+	private Collection<User> subscribers;
 	private EmailService emailService;
-	
-	/* 
+
+	/*
 	 * Constructor
 	 */
-	
-	public SubscriptionService(EmailService emailService) {}
 
-	/* 
-	 * Method to code/test
-	 */
-	
-	public void addSubscriber(User user) {}
-	
-	/* 
-	 * Method to code/test
-	 */
-	
-	public void removeSubscriber(User user) {}
-	
-	/* 
-	 * Method to code/test
-	 */
-	
-	public int sendMessage(Message message) {
-		
-		return 0;
-		
+	public SubscriptionService(EmailService emailService) {
+		this.emailService = emailService;
+		this.subscribers = new ArrayList<>();
 	}
-	
-	/* 
+
+	/*
+	 * Method to code/test
+	 */
+
+	public void addSubscriber(User user)
+			throws NullUserException, ExistingUserException, UserDoesNotHaveEmailException {
+		if (user == null) {
+			throw new NullUserException();
+		}
+		if (subscribers.contains(user)) {
+			throw new ExistingUserException();
+		}
+		if (user.getDelivery() != Delivery.LOCAL && user.getEmail() == null) {
+			throw new UserDoesNotHaveEmailException();
+		}
+		subscribers.add(user);
+	}
+
+	/*
+	 * Method to code/test
+	 */
+
+	public void removeSubscriber(User user) throws NullUserException, NonExistingUserException {
+		if (user == null) {
+			throw new NullUserException();
+		}
+		if (!subscribers.contains(user)) {
+			throw new NonExistingUserException();
+		}
+		subscribers.remove(user);
+	}
+
+	/*
+	 * Method to code/test
+	 */
+
+	public int sendMessage(Message message) {
+		int discardedMessages = 0;
+
+		for (User user : subscribers) {
+			Delivery delivery = user.getDelivery();
+			if (delivery == Delivery.EMAIL) {
+				emailService.sendMessage(user, message);
+			} else if (delivery == Delivery.LOCAL) {
+				user.saveMessage(message);
+			} else if (delivery == Delivery.DO_NOT_DELIVER) {
+				long id = (message != null) ? message.getId() : 0L;
+				user.saveMessage(new Message(id, "Ha perdido ud. un mensaje"));
+				discardedMessages++;
+			}
+		}
+
+		return discardedMessages;
+	}
+
+	/*
 	 * Others getters and setters
 	 */
-	
+
 	public Collection<User> getSubscribers() {
 		return subscribers;
 	}
