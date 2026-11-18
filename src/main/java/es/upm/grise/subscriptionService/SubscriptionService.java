@@ -7,12 +7,9 @@ import es.upm.grise.subscriptionService.exceptions.NullUserException;
 import es.upm.grise.subscriptionService.exceptions.UserDoesNotHaveEmailException;
 import es.upm.grise.subscriptionService.exceptions.NonExistingUserException;
 
-import es.upm.grise.subscriptionService.EmailService;
-
 public class SubscriptionService {
 
 	private Collection <User> subscribers;
-	@SuppressWarnings("unused")
 	private EmailService emailService;
 	
 	public SubscriptionService(EmailService emailService) {
