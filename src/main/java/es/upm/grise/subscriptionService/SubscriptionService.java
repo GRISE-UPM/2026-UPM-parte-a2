@@ -2,6 +2,11 @@ package es.upm.grise.subscriptionService;
 
 import java.util.Collection;
 
+import es.upm.grise.subscriptionService.exceptions.ExistingUserException;
+import es.upm.grise.subscriptionService.exceptions.NonExistingUserException;
+import es.upm.grise.subscriptionService.exceptions.NullUserException;
+import es.upm.grise.subscriptionService.exceptions.UserDoesNotHaveEmailException;
+
 public class SubscriptionService {
 
 	private Collection <User> subscribers;
@@ -21,15 +26,15 @@ public class SubscriptionService {
 	 * Method to code/test
 	 */
 	
-	public void addSubscriber(User user) throws NullUserException, ExistingUserException {
+	public void addSubscriber(User user) throws NullUserException, ExistingUserException, UserDoesNotHaveEmailException {
 		if(user == null) {
-			throw new NullUserException("User cannot be null");
+			throw new NullUserException();
 		}
 		else if(subscribers.contains(user)) {
-			throw new ExistingUserException("User is already subscribed");
+			throw new ExistingUserException();
 		}
 		else if(user.getEmail() == null) { // || user.getEmail().isEmpty()
-			throw new UserDoesNotHaveEmailException("User email cannot be null");
+			throw new UserDoesNotHaveEmailException();
 
 		}
 		else {
@@ -41,12 +46,12 @@ public class SubscriptionService {
 	 * Method to code/test
 	 */
 	
-	public void removeSubscriber(User user) {
+	public void removeSubscriber(User user) throws NullUserException, NonExistingUserException {
 		if(user == null){
-			throw new NullUserException("User cannot be null");
+			throw new NullUserException();
 		}
 		else if(!subscribers.contains(user)) {
-			throw new NonExistingUserException("User is not subscribed");
+			throw new NonExistingUserException();
 		}
 		else {
 			subscribers.remove(user);
@@ -67,7 +72,7 @@ public class SubscriptionService {
 			}
 			else if(user.getDelivery() == Delivery.DO_NOT_DELIVER) {
 				descartados++;
-				emailService.sendMessage(user, new Message("Ha perdido ud. un mensaje"));
+				emailService.sendMessage(user, new Message(descartados,"Ha perdido ud. un mensaje"));
 			}
 
 
